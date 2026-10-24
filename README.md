@@ -1,125 +1,32 @@
 # Blockpatch
 
-A Monad Testnet bug-bounty prototype with project-scoped native MON escrow, a Next.js wallet app, and a backend API that only issues time-limited reward signatures after authenticated human review.
+Blockpatch is a testnet-only bug bounty prototype. Researchers submit reports through a Next.js wallet app; a reviewer can approve reports through an Express API, which signs rewards for claiming from a Solidity escrow contract.
 
-> **Testnet only.** This project has not been independently audited and is not production-ready. Use only faucet MON. The report analyzer is heuristic; it does not verify vulnerabilities, and its output never authorizes a payout.
+> **Monad Testnet only.** This project is unaudited and not production-ready. Use only faucet MON. Report analysis is heuristic and never approves a payout.
 
-## Monad Testnet
+## Stack
 
-This app uses **Monad Testnet native MON**, not an ERC-20 mock token. Native testnet MON pays gas and is deposited as the bounty asset.
+- Next.js frontend with MetaMask and ethers
+- Express backend with SQLite report storage and reviewer-controlled reward signing
+- Solidity escrow contract, tested and deployed with Hardhat
+- Monad Testnet (chain ID `10143`, native currency `MON`)
 
-| Setting | Value |
-| --- | --- |
-| Network | Monad Testnet |
-| Chain ID | `10143` |
-| Native currency | `MON` |
-| RPC | `https://testnet-rpc.monad.xyz` |
-| Explorer | [MonadVision Testnet](https://testnet.monadvision.com) |
-| Faucet | [Monad Faucet](https://faucet.monad.xyz) |
+## Local development
 
-See the [official Monad Testnet network details](https://docs.monad.xyz/developer-essentials/testnet.md) for current RPC and faucet information. Add Monad Testnet to MetaMask using those official settings and obtain test MON from the faucet.
+Requires Node.js 22.10+ and npm. Run each service in its own PowerShell terminal.
 
-## What changed for testnet readiness
-
-- Each project ID has a separate available MON balance. A report payout can only debit the matching project’s balance.
-- The deployed contract enforces an immutable per-claim maximum reward and a maximum signature lifetime. Signatures bind the chain, contract, project, report, researcher, amount, and expiry.
-- A non-empty PoC and heuristic severity are **not** approval. Reports remain pending until a reviewer inspects them and approves an amount through the authenticated backend API.
-- Duplicate history and review state are stored in SQLite and survive backend restarts.
-- Project owners can add a bounty name and details, then view their deposits and each project’s live escrow balance on the **My bounties** page. Project descriptions are saved in the browser that submitted them; deposit events and escrow balances are read from Monad Testnet.
-- Researchers have public wallet profiles at `/profile/<wallet-address>` with aggregate submitted, reviewer-approved, reviewer-rejected, and pending counts plus a project history. Public profiles omit report titles, descriptions, and proofs of concept.
-- The contract has Hardhat tests for project isolation, amount limits, project-bound signatures, expired signatures, replay prevention, and reentrancy.
-- Deployment is scripted and refuses to deploy to a chain other than Monad Testnet.
-
-## Prerequisites
-
-- Node.js 22.10+ and npm
-- MetaMask on Monad Testnet with faucet MON
-- A separately controlled backend signing wallet and a reviewer API key
-
-## 1. Compile, test, and deploy
-
-```powershell
-cd contracts
-npm install
-npm test
-npm run compile
-```
-
-Set deployment environment variables in the same PowerShell session. Do not commit or share populated secrets:
-
-```powershell
-$env:MONAD_TESTNET_RPC_URL = "https://testnet-rpc.monad.xyz"
-$env:DEPLOYER_PRIVATE_KEY = "0x<64 hex characters from a testnet deployer private key>"
-$env:BACKEND_SIGNER_ADDRESS = "0x<backend signing wallet address>"
-$env:MAX_REWARD_WEI = "1000000000000000"
-npm run deploy:monad-testnet
-```
-
-Replace each placeholder with your own value; do not type the angle brackets or literal placeholder text. `DEPLOYER_PRIVATE_KEY` must be exactly `0x` followed by 64 hexadecimal characters (66 characters total), with no quotes embedded in the value. It must belong to a wallet funded with Monad Testnet MON. In PowerShell, the environment-variable assignment above keeps the key available to the child `npm` process for that session only.
-
-Record the printed contract address. The deployer key and backend signing key should be different; only the backend signing key belongs in the backend environment. The signer is immutable, so a compromised signer requires a new deployment and configuration update.
-
-## 2. Configure and run the backend
+Start the backend:
 
 ```powershell
 cd backend
 npm install
 Copy-Item .env.example .env
-```
-
-Set these values in `backend/.env`:
-
-- `CHAIN_ID=10143`
-- `CONTRACT_ADDRESS` to the deployed Monad Testnet contract
-- `DEMO_SIGNING_ENABLED=true`
-- `BACKEND_SIGNER_PRIVATE_KEY` to the private key whose address was passed to the constructor
-- `REVIEWER_API_KEY` to a long, unique secret
-- `ALLOWED_HUNTER_ADDRESSES` to comma-separated test researcher addresses
-- `MAX_REWARD_WEI` to the same maximum used at deployment
-
-The severity reward values are reviewer-selected ceilings; every approved amount must be positive and no greater than both its severity ceiling and `MAX_REWARD_WEI`. Keep `.env` and the SQLite database private. By default the database is `backend/data/reports.sqlite`; set `REPORT_DB_PATH` to change it. The database contains submitted report details and should be backed up and access-controlled appropriately.
-
-Start the API:
-
-```powershell
-npm test
 npm start
 ```
 
-The API listens on `http://localhost:4000`. `GET /api/health` reports chain ID, whether signing is enabled, and that manual review is required.
+The API listens on `http://localhost:4000`. Configure `backend/.env` to enable signing; keep the signer key and reviewer API key private. The SQLite database defaults to `backend/data/reports.sqlite`.
 
-### Reviewer workflow
-
-1. A researcher submits a report through the app. The API stores it and returns `reviewStatus: "PENDING_REVIEW"`; no reward signature is produced.
-2. An authorized reviewer retrieves the report, including the PoC:
-
-   ```powershell
-   $headers = @{ Authorization = "Bearer $env:REVIEWER_API_KEY" }
-   Invoke-RestMethod "http://localhost:4000/api/review/reports/<report-hash>" -Headers $headers
-   ```
-
-3. After independently reviewing it, the reviewer explicitly approves a payout amount in wei:
-
-   ```powershell
-   $headers = @{
-     Authorization = "Bearer $env:REVIEWER_API_KEY"
-     "Content-Type" = "application/json"
-   }
-   $body = @{ amountWei = "100000000000000" } | ConvertTo-Json
-   Invoke-RestMethod `
-     -Method Post `
-     -Uri "http://localhost:4000/api/review/reports/<report-hash>/approve" `
-     -Headers $headers `
-     -Body $body
-   ```
-
-   Approval fails for a non-accepted report, a researcher outside the allowlist, or an amount above the configured ceilings.
-
-4. The researcher selects **Refresh review status** in the app. An approved signature can be claimed by the specified researcher before it expires, provided the project has enough escrow.
-
-Keep the reviewer API key out of the frontend and browser. Use HTTPS and restrict API access appropriately outside local testing.
-
-## 3. Configure and run the frontend
+Start the frontend:
 
 ```powershell
 cd frontend
@@ -127,45 +34,24 @@ npm install
 Copy-Item .env.example .env.local
 ```
 
-<<<<<<< Updated upstream
-Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address. This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. Restart the frontend after changing `.env.local`, because Next.js reads public environment variables when it starts. The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
-=======
-Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address (not your wallet address). This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. Set `BACKEND_URL=http://localhost:4000` in `frontend/.env.local` to point Next.js to the API (the example file already contains this setting). Next.js proxies `/api/*` requests to the backend, so browser requests use the frontend's origin. The app checks that contract bytecode exists on Monad Testnet before submitting a deposit or claim. Frontend environment changes are not applied to the running Next.js process: stop and restart the frontend after changing `.env.local` (and rebuild before starting a production build). The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
->>>>>>> Stashed changes
+Set `NEXT_PUBLIC_CONTRACT_ADDRESS` to the deployed contract address in `frontend/.env.local`, then run:
 
 ```powershell
 npm run dev
 ```
 
-Open `http://localhost:3000`, connect MetaMask, deposit native MON for a project, then submit a report using the same project ID. Use **My bounties** in the sidebar to track your deposits, remaining project escrow, and the latest deposit transaction. Project names and descriptions are stored in that browser; on-chain funding history and balances remain available from Monad Testnet. Open `/profile/<wallet-address>` to view or share a public researcher profile; it shows project IDs, severity, and review outcome, never report contents. Project IDs are UTF-8 keccak256-hashed consistently by the frontend and backend.
+The example environment file points the app at the local backend. Open `http://localhost:3000` and connect MetaMask on Monad Testnet.
 
-### Deploy the frontend to Vercel
+Run backend tests with `npm test` from the repository root. Run contract tests with `npm install` and `npm test` from `contracts`.
 
-Create a Vercel project for this repository and set its **Root Directory** to `frontend`. Let Vercel detect Next.js; keep the default build command (`npm run build`), install command, and `.next` output settings. The frontend has its own `package-lock.json`, so Vercel can install it independently of the repository-root package.
+## Vercel
 
-Set these project environment variables before deploying:
+The root `vercel.json` declares two services: the Next.js frontend rooted at `frontend` and the backend rooted at `backend`, with `backend/server.js` as its entry point. It routes `/api/backend...` requests to the backend service and other requests to the frontend.
 
-- `NEXT_PUBLIC_CONTRACT_ADDRESS`: the deployed Monad Testnet contract address.
-- `BACKEND_URL`: the absolute HTTPS base URL of the separately hosted backend, for example `https://api.example.com` (no `/api` suffix). This is a server-side Next.js setting and is not exposed to browser code.
+The frontend also uses `NEXT_PUBLIC_API_URL` for its API requests. Set it to the backend's public HTTPS URL in the frontend deployment's environment variables, along with `NEXT_PUBLIC_CONTRACT_ADDRESS`. The repository does not specify a live deployment URL.
 
-The backend is a separate deployment: it uses SQLite and must run somewhere with persistent storage. Set `FRONTEND_ORIGIN` to the deployed frontend origin only if browser clients will call the backend directly; the normal frontend integration is proxied server-side and does not depend on browser CORS. Do not add reviewer credentials or signing keys to Vercel frontend variables; any `NEXT_PUBLIC_` variable is included in browser code. Changing either frontend environment variable requires a new Vercel deployment. A production build requires `BACKEND_URL` and fails clearly if it is not configured.
+The backend stores reports in SQLite by default. Vercel's local filesystem is not durable storage, so use a backend host or storage setup with persistent volumes if reports must survive redeployments or instance changes.
 
-To verify a production build locally, run `npm ci` and `npm run build` from `frontend`.
+## Contract deployment
 
-## API summary
-
-- `POST /api/submit-report`: validates and stores a report; it does not sign payouts.
-- `GET /api/reports/:reportHash`: returns public triage/review status and, after approval, the researcher-bound signature.
-- `GET /api/review/reports/:reportHash`: returns report details; requires `Authorization: Bearer <REVIEWER_API_KEY>`.
-- `POST /api/review/reports/:reportHash/approve`: issues a time-limited signature for an explicitly selected amount; requires reviewer authorization and signing configuration.
-- `POST /api/review/reports/:reportHash/reject`: records an authorized rejection of a pending report; requires reviewer authorization.
-- `GET /api/profiles/:address`: returns public aggregate review counts and a limited project history for a researcher wallet, without report contents.
-
-## Remaining limitations
-
-- Human review is an operational process, not an on-chain governance mechanism. The reviewer API key and backend signer remain trusted authorities.
-- The analyzer and duplicate detection are simple heuristics/exact normalized-title-and-description matches, not technical verification or semantic duplicate detection. Review reports independently; these controls do not prevent Sybil submissions.
-- The backend uses a local SQLite database and is intended for a single API instance in this testnet setup. Protect report contents, backups, and credentials.
-- Deposits have no owner withdrawal/refund mechanism. Do not deposit funds you need returned.
-- There is no independent security audit, production key-management integration, or production deployment process. Do not use real-value assets.
-- The Hardhat test/deployment toolchain is development-only; `npm audit` currently reports upstream Hardhat/Zod advisories with no patched compatible release. Recheck the toolchain before running it on untrusted contract projects, and do not expose it as a service. Backend runtime dependencies currently audit clean.
+Contract deployment is configured for Monad Testnet only. From `contracts`, install dependencies, run `npm test`, then use `npm run deploy:monad-testnet` with the required `MONAD_TESTNET_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, and `BACKEND_SIGNER_ADDRESS` environment variables. Do not commit private keys or populated environment files.
