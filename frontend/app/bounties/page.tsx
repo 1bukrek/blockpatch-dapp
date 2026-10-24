@@ -25,6 +25,8 @@ type TrackedBounty = {
 };
 
 const targetChainId = 10143;
+const eventQueryBlockRange = 10_000;
+const configuredDeploymentBlock = Number(process.env.NEXT_PUBLIC_CONTRACT_DEPLOY_BLOCK ?? 0);
 const validContractAddress =
   isAddress(contractAddress) && contractAddress !== "0x0000000000000000000000000000000000000000";
 
@@ -43,6 +45,9 @@ export default function BountiesPage() {
       if (!validContractAddress) {
         throw new Error("Set NEXT_PUBLIC_CONTRACT_ADDRESS in frontend/.env.local to the deployed contract.");
       }
+      if (!Number.isSafeInteger(configuredDeploymentBlock) || configuredDeploymentBlock < 0) {
+        throw new Error("NEXT_PUBLIC_CONTRACT_DEPLOY_BLOCK must be a non-negative block number.");
+      }
       if (!window.ethereum) throw new Error("MetaMask was not found. Install the browser extension first.");
 
       const provider = new BrowserProvider(window.ethereum);
@@ -53,11 +58,17 @@ export default function BountiesPage() {
       }
 
       const contract = new Contract(contractAddress, bountyShieldAbi, provider);
-      const events = await contract.queryFilter(
-        contract.filters.BountyDeposited(null, owner),
-        0,
-        "latest",
-      );
+      const latestBlock = await provider.getBlockNumber();
+      const depositFilter = contract.filters.BountyDeposited(null, owner);
+      const events: Awaited<ReturnType<typeof contract.queryFilter>> = [];
+      for (
+        let fromBlock = configuredDeploymentBlock;
+        fromBlock <= latestBlock;
+        fromBlock += eventQueryBlockRange
+      ) {
+        const toBlock = Math.min(fromBlock + eventQueryBlockRange - 1, latestBlock);
+        events.push(...await contract.queryFilter(depositFilter, fromBlock, toBlock));
+      }
       const projects = new Map<string, { contributed: bigint; count: number; block: number; tx: string }>();
 
       for (const event of events) {

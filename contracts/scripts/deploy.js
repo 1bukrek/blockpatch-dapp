@@ -25,8 +25,12 @@ async function main() {
   }
 
   const contract = await ethers.deployContract("BountyShield", [signerAddress, maximumReward]);
-  await contract.waitForDeployment();
+  const deploymentTransaction = contract.deploymentTransaction();
+  if (!deploymentTransaction) throw new Error("Could not retrieve the contract deployment transaction.");
+  const deploymentReceipt = await deploymentTransaction.wait();
+  if (!deploymentReceipt) throw new Error("Could not retrieve the contract deployment receipt.");
   console.log(`BountyShield deployed to ${await contract.getAddress()}`);
+  console.log(`Deployment block: ${deploymentReceipt.blockNumber}`);
   console.log(`Backend signer: ${ethers.getAddress(signerAddress)}`);
   console.log(`Maximum reward: ${maximumReward} wei`);
 }

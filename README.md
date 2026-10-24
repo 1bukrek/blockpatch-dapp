@@ -4,6 +4,10 @@ Blockpatch is a testnet-only bug bounty prototype. Researchers submit reports th
 
 > **Monad Testnet only.** This project is unaudited and not production-ready. Use only faucet MON. Report analysis is heuristic and never approves a payout.
 
+## Hackathon
+
+Built for **Monad Blitz Ankara V4**, a blockchain and Web3 hackathon. Development time: **5 hours and 45 minutes**.
+
 ## Stack
 
 - Next.js frontend with MetaMask and ethers
@@ -34,7 +38,7 @@ npm install
 Copy-Item .env.example .env.local
 ```
 
-Set `NEXT_PUBLIC_CONTRACT_ADDRESS` to the deployed contract address in `frontend/.env.local`, then run:
+Set `NEXT_PUBLIC_CONTRACT_ADDRESS` to the deployed contract address in `frontend/.env.local`. Set `NEXT_PUBLIC_CONTRACT_DEPLOY_BLOCK` to the contract's deployment block (printed by the deployment script, or available from its creation transaction on MonadVision); this lets **My bounties** scan only events from this contract and query them in RPC-friendly 10,000-block ranges. Use `0` only if you cannot determine the deployment block. Then run:
 
 ```powershell
 npm run dev
@@ -48,7 +52,7 @@ Run backend tests with `npm test` from the repository root. Run contract tests w
 
 The root `vercel.json` declares two services: the Next.js frontend rooted at `frontend` and the backend rooted at `backend`, with `backend/server.js` as its entry point. It routes `/api/backend...` requests to the backend service and other requests to the frontend.
 
-The frontend also uses `NEXT_PUBLIC_API_URL` for its API requests. Set it to the backend's public HTTPS URL in the frontend deployment's environment variables, along with `NEXT_PUBLIC_CONTRACT_ADDRESS`. The repository does not specify a live deployment URL.
+The frontend also uses `NEXT_PUBLIC_API_URL` for its API requests. Set it to the backend's public HTTPS URL in the frontend deployment's environment variables, along with `NEXT_PUBLIC_CONTRACT_ADDRESS` and `NEXT_PUBLIC_CONTRACT_DEPLOY_BLOCK`. The repository does not specify a live deployment URL.
 
 The backend stores reports in SQLite by default. Vercel's local filesystem is not durable storage, so use a backend host or storage setup with persistent volumes if reports must survive redeployments or instance changes.
 
