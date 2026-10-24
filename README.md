@@ -34,6 +34,20 @@ See the [official Monad Testnet network details](https://docs.monad.xyz/develope
 - MetaMask on Monad Testnet with faucet MON
 - A separately controlled backend signing wallet and a reviewer API key
 
+## Quick start
+
+After installing dependencies in `frontend` and `backend` and configuring their env files, open two terminals at the repository root:
+
+```powershell
+npm run backend
+```
+
+```powershell
+npm run frontend
+```
+
+The backend API starts on `http://localhost:4000` and the frontend on `http://localhost:3000`. Keep each command running in its terminal; stop it with Ctrl+C. Restart the relevant command after changing its env file.
+
 ## 1. Compile, test, and deploy
 
 ```powershell
@@ -62,7 +76,7 @@ Record the printed contract address. The deployer key and backend signing key sh
 ```powershell
 cd backend
 npm install
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
 Set these values in `backend/.env`:
@@ -75,7 +89,7 @@ Set these values in `backend/.env`:
 - `ALLOWED_HUNTER_ADDRESSES` to comma-separated test researcher addresses
 - `MAX_REWARD_WEI` to the same maximum used at deployment
 
-The severity reward values are reviewer-selected ceilings; every approved amount must be positive and no greater than both its severity ceiling and `MAX_REWARD_WEI`. Keep `.env` and the SQLite database private. By default the database is `backend/data/reports.sqlite`; set `REPORT_DB_PATH` to change it. The database contains submitted report details and should be backed up and access-controlled appropriately.
+The severity reward values are reviewer-selected ceilings; every approved amount must be positive and no greater than both its severity ceiling and `MAX_REWARD_WEI`. The copy command only creates `.env` when it does not exist, so repeating setup will not replace your settings. Backend environment changes take effect after restarting the API process. Keep `.env` and the SQLite database private. By default the database is `backend/data/reports.sqlite`; set `REPORT_DB_PATH` to change it. The database contains submitted report details and should be backed up and access-controlled appropriately.
 
 Start the API:
 
@@ -122,10 +136,10 @@ Keep the reviewer API key out of the frontend and browser. Use HTTPS and restric
 ```powershell
 cd frontend
 npm install
-Copy-Item .env.example .env.local
+if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }
 ```
 
-Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address. This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. Restart the frontend after changing `.env.local`, because Next.js reads public environment variables when it starts. The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
+Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address (not your wallet address). This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. The app checks that contract bytecode exists on Monad Testnet before submitting a deposit or claim. Frontend environment changes are not applied to the running Next.js process: stop and restart the frontend after changing `.env.local` (and rebuild before starting a production build). The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
 
 ```powershell
 npm run dev

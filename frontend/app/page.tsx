@@ -104,6 +104,16 @@ export default function Home() {
     return provider.getSigner();
   }
 
+  async function assertContractDeployed(signer: Awaited<ReturnType<typeof getWalletSigner>>) {
+    const provider = signer.provider;
+    if (!provider) throw new Error("Could not access the wallet's network provider.");
+    if ((await provider.getCode(contractAddress)) === "0x") {
+      throw new Error(
+        `No contract is deployed at ${contractAddress} on Monad Testnet. Deploy BountyShield and set NEXT_PUBLIC_CONTRACT_ADDRESS in frontend/.env.local to that address.`,
+      );
+    }
+  }
+
   async function deposit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
@@ -127,6 +137,7 @@ export default function Home() {
       const value = parseEther(depositAmount);
       if (value <= 0n) throw new Error("Deposit amount must be greater than zero.");
       const signer = await getWalletSigner();
+      await assertContractDeployed(signer);
       const contract = new Contract(contractAddress, bountyShieldAbi, signer);
       const transaction = await contract.depositBounty(id(projectId.trim()), { value });
       setMessage(`Deposit submitted: ${transaction.hash}`);
@@ -208,6 +219,7 @@ export default function Home() {
     setIsWriting(true);
     try {
       const signer = await getWalletSigner();
+      await assertContractDeployed(signer);
       const contract = new Contract(contractAddress, bountyShieldAbi, signer);
       const transaction = await contract.claimReward(
         result.projectIdHash,
