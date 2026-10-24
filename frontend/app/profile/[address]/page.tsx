@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { isAddress } from "ethers";
 import { useParams } from "next/navigation";
+import { apiUrl } from "@/lib/api";
 
 type HistoryReport = {
   projectId: string;
@@ -22,8 +23,6 @@ type ResearcherProfile = {
   hasMore: boolean;
   reports: HistoryReport[];
 };
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export default function ResearcherProfilePage() {
   const { address: routeAddress } = useParams<{ address: string }>();
@@ -56,7 +55,8 @@ export default function ResearcherProfilePage() {
     setIsLoading(true);
     setError("");
 
-    fetch(`${apiUrl}/api/profiles/${address}`, { signal: controller.signal })
+    Promise.resolve()
+      .then(() => fetch(apiUrl(`/api/profiles/${address}`), { signal: controller.signal }))
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Could not load this profile.");

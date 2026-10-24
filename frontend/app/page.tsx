@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { BrowserProvider, Contract, formatEther, getAddress, id, isAddress, parseEther } from "ethers";
+import { apiUrl } from "@/lib/api";
 import { bountyShieldAbi, contractAddress } from "@/lib/contract";
 import { saveBountyDetails } from "@/lib/bounties";
 
@@ -20,7 +21,6 @@ type ApiResult = {
   signingNote?: string;
 };
 
-<<<<<<< Updated upstream
 type TransactionFeedback = {
   action: "Bounty deposit" | "Reward claim";
   status: "pending" | "confirmed" | "failed";
@@ -29,9 +29,6 @@ type TransactionFeedback = {
   description: string;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-=======
->>>>>>> Stashed changes
 const targetChainId = 10143;
 const validContractAddress =
   isAddress(contractAddress) && contractAddress !== "0x0000000000000000000000000000000000000000";
@@ -204,7 +201,7 @@ export default function Home() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/submit-report", {
+      const response = await fetch(apiUrl("/api/submit-report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -229,7 +226,7 @@ export default function Home() {
     if (!result) return;
     setMessage("");
     try {
-      const response = await fetch(`/api/reports/${result.reportHash}`);
+      const response = await fetch(apiUrl(`/api/reports/${result.reportHash}`));
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Could not refresh report status.");
       setResult(data as ApiResult);
@@ -320,7 +317,6 @@ export default function Home() {
             <Icon name="grid" />
             <span>Overview</span>
           </a>
-<<<<<<< Updated upstream
           <a className="nav-link" href="/#fund">
             <Icon name="coins" />
             <span>Fund a bounty</span>
@@ -334,13 +330,6 @@ export default function Home() {
             <span>Research profiles</span>
           </a>
           <a className="nav-link" href="/#report">
-=======
-          <a className="nav-link" href="#fund">
-            <Icon name="coins" />
-            <span>Fund a bounty</span>
-          </a>
-          <a className="nav-link" href="#report">
->>>>>>> Stashed changes
             <Icon name="shield" />
             <span>Submit a report</span>
           </a>
@@ -364,17 +353,10 @@ export default function Home() {
             </span>
             {address ? (
               <div className="wallet-controls">
-<<<<<<< Updated upstream
                 <a className="wallet-address" title={`View public profile for ${address}`} href={`/profile/${address}`}>
                   <span className="wallet-dot" />
                   {address.slice(0, 6)}…{address.slice(-4)}
                 </a>
-=======
-                <span className="wallet-address" title={address}>
-                  <span className="wallet-dot" />
-                  {address.slice(0, 6)}…{address.slice(-4)}
-                </span>
->>>>>>> Stashed changes
                 <button className="button button-quiet button-small" onClick={disconnectWallet}>
                   Disconnect
                 </button>
@@ -470,11 +452,7 @@ export default function Home() {
                   <span className="action-number">01 / PROJECT OWNER</span>
                 </div>
                 <h3>Fund a bounty</h3>
-<<<<<<< Updated upstream
                 <p className="action-description">Describe the program and put native test MON behind the security work you want to encourage.</p>
-=======
-                <p className="action-description">Put native test MON behind your project and reward the people who help secure it.</p>
->>>>>>> Stashed changes
                 <form onSubmit={deposit} className="form-stack">
                   <Field
                     label="Project ID"
@@ -484,7 +462,6 @@ export default function Home() {
                     required
                   />
                   <Field
-<<<<<<< Updated upstream
                     label="Bounty name"
                     value={bountyName}
                     onChange={setBountyName}
@@ -499,8 +476,6 @@ export default function Home() {
                     required
                   />
                   <Field
-=======
->>>>>>> Stashed changes
                     label="Deposit amount"
                     value={depositAmount}
                     onChange={setDepositAmount}
@@ -508,16 +483,11 @@ export default function Home() {
                     type="number"
                     required
                   />
-<<<<<<< Updated upstream
                   <p className="form-helper">
                     Your name and details are saved in this browser. Funding amount and escrow balance are verified on-chain.
                   </p>
                   <button disabled={isWriting} className="button button-primary button-submit">
                     {isWriting ? "Waiting for wallet…" : "Fund bounty"}
-=======
-                  <button disabled={isWriting} className="button button-primary button-submit">
-                    {isWriting ? "Waiting for wallet…" : "Deposit bounty"}
->>>>>>> Stashed changes
                     {!isWriting && <Icon name="arrow" />}
                   </button>
                 </form>
@@ -605,7 +575,6 @@ export default function Home() {
           )}
 
           {message && <p role="status" className="feedback-message">{message}</p>}
-<<<<<<< Updated upstream
           {transactionFeedback && (
             <div
               role={transactionFeedback.status === "failed" ? "alert" : "status"}
@@ -635,8 +604,6 @@ export default function Home() {
               </div>
             </div>
           )}
-=======
->>>>>>> Stashed changes
           <footer className="workspace-footer">
             <span>BLOCKPATCH <span className="footer-dot">·</span> BUILT FOR RESPONSIBLE DISCLOSURE</span>
             <a href="#overview">Back to top ↑</a>
@@ -647,7 +614,6 @@ export default function Home() {
   );
 }
 
-<<<<<<< Updated upstream
 function transactionErrorMessage(
   error: unknown,
   action: string,
@@ -670,9 +636,6 @@ function transactionErrorMessage(
 }
 
 function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" | "refresh" | "check" | "close" }) {
-=======
-function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" }) {
->>>>>>> Stashed changes
   const shared = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -695,7 +658,6 @@ function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" 
   if (name === "arrow") {
     return <svg {...shared}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
   }
-<<<<<<< Updated upstream
   if (name === "refresh") {
     return <svg {...shared}><path d="M20 7v5h-5M4 17v-5h5" /><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2" /></svg>;
   }
@@ -705,8 +667,6 @@ function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" 
   if (name === "close") {
     return <svg {...shared}><path d="m6 6 12 12M18 6 6 18" /></svg>;
   }
-=======
->>>>>>> Stashed changes
   return <svg {...shared}><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" /><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" /></svg>;
 }
 

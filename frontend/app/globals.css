@@ -1615,7 +1615,6 @@ textarea:focus-visible {
 
 .workspace-footer a:hover {
   color: #c0cafb;
-<<<<<<< Updated upstream
 }
 
 .form-helper {
@@ -2444,6 +2443,4 @@ textarea:focus-visible {
   .transaction-feedback {
     padding: 12px;
   }
-=======
->>>>>>> Stashed changes
 }
