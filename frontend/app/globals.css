@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: #0b1110;
+  color: #e5ede9;
+}
+
+input,
+textarea {
+  color-scheme: dark;
+}

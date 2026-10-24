@@ -1,0 +1,13 @@
+{
+  "name": "bountyshield-contracts",
+  "private": true,
+  "scripts": {
+    "compile": "solcjs --bin --abi BountyShield.sol --output-dir artifacts"
+  },
+  "devDependencies": {
+    "solc": "0.8.38"
+  },
+  "overrides": {
+    "tmp": "^0.2.7"
+  }
+}

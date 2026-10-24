@@ -1,0 +1,9 @@
+node_modules/
+frontend/.next/
+frontend/out/
+contracts/artifacts/
+*.abi
+*.bin
+*.tsbuildinfo
+.env
+.env.local
