@@ -50,6 +50,6 @@ function estimateSeverity(text) {
   return "LOW";
 }
 
-function normalize(value) {
+export function normalize(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }

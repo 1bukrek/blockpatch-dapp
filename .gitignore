@@ -1,7 +1,9 @@
 node_modules/
+backend/data/
 frontend/.next/
 frontend/out/
 contracts/artifacts/
+contracts/cache/
 *.abi
 *.bin
 *.tsbuildinfo

@@ -1,11 +1,23 @@
 {
   "name": "bountyshield-contracts",
   "private": true,
+  "type": "module",
   "scripts": {
-    "compile": "solcjs --bin --abi BountyShield.sol --output-dir artifacts"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:monad-testnet": "hardhat run scripts/deploy.js --network monadTestnet"
   },
   "devDependencies": {
-    "solc": "0.8.38"
+    "@nomicfoundation/hardhat-ethers": "^4.2.1",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.0",
+    "@nomicfoundation/hardhat-mocha": "^4.0.1",
+    "chai": "^5.2.1",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.21.0",
+    "mocha": "^12.0.0",
+    "solc": "0.8.38",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "tmp": "^0.2.7"

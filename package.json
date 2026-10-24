@@ -1,0 +1,21 @@
+{
+  "name": "blockpatch-dapp",
+  "version": "1.0.0",
+  "description": "A small, testnet-only bug bounty prototype with a Solidity reward contract, an Express triage/signing API, and a Next.js wallet dApp.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1bukrek/blockpatch-dapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/1bukrek/blockpatch-dapp/issues"
+  },
+  "homepage": "https://github.com/1bukrek/blockpatch-dapp#readme"
+}

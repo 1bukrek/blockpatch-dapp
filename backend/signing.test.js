@@ -13,20 +13,24 @@ test("signs a claim payload recoverable by the contract's signer address", async
   const signer = Wallet.createRandom();
   const payload = {
     contractAddress: "0x0000000000000000000000000000000000000002",
-    chainId: 11155111,
+    chainId: 10143,
+    projectId: `0x${"22".repeat(32)}`,
     reportHash: `0x${"11".repeat(32)}`,
     hunterAddress: "0x0000000000000000000000000000000000000001",
     amount: "500000000000000",
+    expiresAt: 1_800_000_000,
   };
   const signature = await signRewardPayload(signer, payload);
   const payloadHash = solidityPackedKeccak256(
-    ["address", "uint256", "bytes32", "address", "uint256"],
+    ["address", "uint256", "bytes32", "bytes32", "address", "uint256", "uint256"],
     [
       payload.contractAddress,
       payload.chainId,
+      payload.projectId,
       payload.reportHash,
       payload.hunterAddress,
       payload.amount,
+      payload.expiresAt,
     ],
   );
   assert.equal(recoverAddress(hashMessage(getBytes(payloadHash)), signature), signer.address);

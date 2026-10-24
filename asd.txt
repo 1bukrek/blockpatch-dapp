@@ -1,0 +1,5 @@
+$env:MONAD_TESTNET_RPC_URL = "https://testnet-rpc.monad.xyz"
+$env:DEPLOYER_PRIVATE_KEY = "0xecab9348c196f9141a85165700e09043e9b62dc2a8f8b3e7485e289cdb2463b4"
+$env:BACKEND_SIGNER_ADDRESS = "0xb70A8398aC8d341761A53C8f38dB4a054FB8d2f0"
+$env:MAX_REWARD_WEI = "2"
+npm run deploy:monad-testnet

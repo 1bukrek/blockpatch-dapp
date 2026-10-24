@@ -6,18 +6,21 @@ import { bountyShieldAbi, contractAddress } from "@/lib/contract";
 
 type ApiResult = {
   reportHash: `0x${string}`;
+  projectIdHash: `0x${string}`;
   status: "ACCEPTED" | "DUPLICATE" | "INVALID";
+  reviewStatus: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   suggested_payout_percentage: number;
   reasoning: string;
   amount: string;
   signature: `0x${string}` | null;
+  expiresAt: number | null;
   canClaim: boolean;
   signingNote?: string;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-const targetChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 11155111);
+const targetChainId = 10143;
 const validContractAddress =
   isAddress(contractAddress) && contractAddress !== "0x0000000000000000000000000000000000000000";
 
@@ -109,11 +112,13 @@ export default function Home() {
       return;
     }
     if (!validContractAddress) {
-      setMessage("Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed contract.");
+      setMessage(
+        "Set NEXT_PUBLIC_CONTRACT_ADDRESS in frontend/.env.local to the deployed contract, then restart the frontend.",
+      );
       return;
     }
     if (!projectId.trim() || !depositAmount) {
-      setMessage("Enter a project ID and a positive ETH amount.");
+      setMessage("Enter a project ID and a positive MON amount.");
       return;
     }
 
@@ -166,6 +171,19 @@ export default function Home() {
     }
   }
 
+  async function refreshReportStatus() {
+    if (!result) return;
+    setMessage("");
+    try {
+      const response = await fetch(`${apiUrl}/api/reports/${result.reportHash}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not refresh report status.");
+      setResult(data as ApiResult);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not refresh report status.");
+    }
+  }
+
   async function claimReward() {
     setMessage("");
     if (!address) {
@@ -173,11 +191,17 @@ export default function Home() {
       return;
     }
     if (!validContractAddress) {
-      setMessage("Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed contract.");
+      setMessage(
+        "Set NEXT_PUBLIC_CONTRACT_ADDRESS in frontend/.env.local to the deployed contract, then restart the frontend.",
+      );
       return;
     }
     if (!result?.canClaim || !result.signature) {
       setMessage("This report does not have an authorized payout signature.");
+      return;
+    }
+    if (!result.expiresAt || result.expiresAt <= Math.floor(Date.now() / 1000)) {
+      setMessage("The payout signature has expired. Refresh the report status after reviewer renewal.");
       return;
     }
 
@@ -186,9 +210,11 @@ export default function Home() {
       const signer = await getWalletSigner();
       const contract = new Contract(contractAddress, bountyShieldAbi, signer);
       const transaction = await contract.claimReward(
+        result.projectIdHash,
         result.reportHash,
         address,
         BigInt(result.amount),
+        result.expiresAt,
         result.signature,
       );
       setMessage(`Claim submitted: ${transaction.hash}`);
@@ -206,11 +232,11 @@ export default function Home() {
       <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950 pb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
-            Sepolia testnet prototype
+            Monad Testnet prototype · native test MON
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">BountyShield</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Blockpatch</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Report vulnerabilities. Review a mock triage. Claim an authorized testnet reward.
+            Submit reports for human review. Claim an authorized testnet reward.
           </p>
         </div>
         {address ? (
@@ -236,9 +262,9 @@ export default function Home() {
       </header>
 
       <div className="mb-7 rounded-xl border border-amber-900/60 bg-amber-950/30 p-4 text-sm leading-6 text-amber-100">
-        Demo safety: analysis is a heuristic, duplicate history is in-memory, and payouts require an
-        explicit backend demo-signing allowlist. Use testnet funds only; this is not an audited
-        production system.
+        Testnet only: heuristic triage never authorizes a payout by itself. Every reward requires
+        manual reviewer approval, an allowlisted wallet, and available MON in that project&apos;s
+        escrow.
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -248,7 +274,7 @@ export default function Home() {
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">Fund a bounty</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Deposit testnet ETH into the shared contract reward pool for this project.
+            Deposit native test MON into this project&apos;s isolated reward balance.
           </p>
           <form onSubmit={deposit} className="mt-6 space-y-4">
             <Field
@@ -259,7 +285,7 @@ export default function Home() {
               required
             />
             <Field
-              label="Deposit amount (ETH)"
+              label="Deposit amount (MON)"
               value={depositAmount}
               onChange={setDepositAmount}
               placeholder="0.01"
@@ -316,7 +342,7 @@ export default function Home() {
               disabled={isSubmitting}
               className="w-full rounded-lg bg-sky-400 px-4 py-3 font-semibold text-sky-950 hover:bg-sky-300 disabled:opacity-50"
             >
-              {isSubmitting ? "Analyzing…" : "Analyze and submit"}
+              {isSubmitting ? "Submitting…" : "Submit for review"}
             </button>
           </form>
         </section>
@@ -340,11 +366,33 @@ export default function Home() {
                 onClick={claimReward}
                 className="rounded-lg bg-emerald-400 px-4 py-2.5 font-semibold text-emerald-950 hover:bg-emerald-300 disabled:opacity-50"
               >
-                {isWriting ? "Waiting for wallet…" : `Claim ${formatEther(BigInt(result.amount))} ETH`}
+                {isWriting ? "Waiting for wallet…" : `Claim ${formatEther(BigInt(result.amount))} MON`}
               </button>
             )}
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-300">{result.reasoning}</p>
+          {result.reviewStatus === "PENDING_REVIEW" && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-amber-300">Waiting for a human reviewer. No payout is authorized yet.</p>
+              <button
+                onClick={refreshReportStatus}
+                className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-emerald-500"
+              >
+                Refresh review status
+              </button>
+            </div>
+          )}
+          {result.reviewStatus === "APPROVED" && !result.canClaim && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-amber-300">This payout signature has expired. A reviewer must renew it.</p>
+              <button
+                onClick={refreshReportStatus}
+                className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-emerald-500"
+              >
+                Refresh review status
+              </button>
+            </div>
+          )}
           {result.signingNote && <p className="mt-3 text-sm text-amber-300">{result.signingNote}</p>}
           <p className="mt-3 break-all font-mono text-xs text-slate-500">
             Report hash: {result.reportHash}
