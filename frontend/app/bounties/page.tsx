@@ -195,11 +195,7 @@ export default function BountiesPage() {
           <a className="nav-link" href="/#overview"><Icon name="grid" /><span>Overview</span></a>
           <a className="nav-link" href="/#fund"><Icon name="coins" /><span>Fund a bounty</span></a>
           <a className="nav-link active" href="/bounties"><Icon name="grid" /><span>My bounties</span></a>
-          {address && (
-            <a className="nav-link" href={`/profile/${address}`}>
-              <Icon name="shield" /><span>My profile</span>
-            </a>
-          )}
+          <a className="nav-link" href="/profile"><Icon name="shield" /><span>Research profiles</span></a>
           <a className="nav-link" href="/#report"><Icon name="shield" /><span>Submit a report</span></a>
         </nav>
         <div className="sidebar-bottom">

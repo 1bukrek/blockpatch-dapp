@@ -325,12 +325,10 @@ export default function Home() {
             <Icon name="grid" />
             <span>My bounties</span>
           </a>
-          {address && (
-            <a className="nav-link" href={`/profile/${address}`}>
-              <Icon name="shield" />
-              <span>My profile</span>
-            </a>
-          )}
+          <a className="nav-link" href="/profile">
+            <Icon name="shield" />
+            <span>Research profiles</span>
+          </a>
           <a className="nav-link" href="/#report">
             <Icon name="shield" />
             <span>Submit a report</span>

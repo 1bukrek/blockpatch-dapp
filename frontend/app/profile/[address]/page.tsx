@@ -90,7 +90,7 @@ export default function ResearcherProfilePage() {
           <a className="nav-link" href="/#overview"><Icon name="grid" /><span>Overview</span></a>
           <a className="nav-link" href="/#fund"><Icon name="coins" /><span>Fund a bounty</span></a>
           <a className="nav-link" href="/bounties"><Icon name="grid" /><span>My bounties</span></a>
-          <a className="nav-link active" href={`/profile/${address}`}><Icon name="shield" /><span>Research profile</span></a>
+          <a className="nav-link active" href="/profile"><Icon name="shield" /><span>Research profiles</span></a>
           <a className="nav-link" href="/#report"><Icon name="shield" /><span>Submit a report</span></a>
         </nav>
         <div className="sidebar-bottom">
