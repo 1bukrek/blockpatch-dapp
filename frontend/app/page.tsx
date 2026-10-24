@@ -228,188 +228,291 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-5 py-10 sm:px-8">
-      <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950 pb-6">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
-            Monad Testnet prototype · native test MON
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Blockpatch</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Submit reports for human review. Claim an authorized testnet reward.
-          </p>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a className="brand" href="#overview" aria-label="Blockpatch home">
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M7 7h8v8H7zM17 7h8v8h-8zM7 17h8v8H7z" fill="currentColor" />
+              <path d="M17 17h8v8h-8z" fill="currentColor" opacity=".48" />
+            </svg>
+          </span>
+          <span>blockpatch<span className="brand-period">.</span></span>
+        </a>
+
+        <p className="sidebar-label">Workspace</p>
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          <a className="nav-link active" href="#overview">
+            <Icon name="grid" />
+            <span>Overview</span>
+          </a>
+          <a className="nav-link" href="#fund">
+            <Icon name="coins" />
+            <span>Fund a bounty</span>
+          </a>
+          <a className="nav-link" href="#report">
+            <Icon name="shield" />
+            <span>Submit a report</span>
+          </a>
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="sidebar-note-icon"><Icon name="spark" /></div>
+          <p className="sidebar-note-title">Built for better security</p>
+          <p className="sidebar-note-copy">Responsible disclosure starts with a safe place to report.</p>
+          <span className="sidebar-version">MONAD TESTNET · 01</span>
         </div>
-        {address ? (
-          <div className="flex items-center gap-3">
-            <span className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300">
-              {address.slice(0, 6)}…{address.slice(-4)} {chainId !== targetChainId && "(wrong network)"}
+      </aside>
+
+      <div className="main-column">
+        <header className="topbar">
+          <p className="breadcrumb">Workspace <span>/</span> Overview</p>
+          <div className="topbar-actions">
+            <span className={`network-pill ${chainId !== null && chainId !== targetChainId ? "network-warning" : ""}`}>
+              <span className="status-dot" />
+              {chainId !== null && chainId !== targetChainId ? "Wrong network" : "Monad Testnet"}
             </span>
-            <button
-              onClick={disconnectWallet}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-emerald-500"
-            >
-              Disconnect
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={connectWallet}
-            className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-emerald-950 hover:bg-emerald-300"
-          >
-            Connect wallet
-          </button>
-        )}
-      </header>
-
-      <div className="mb-7 rounded-xl border border-amber-900/60 bg-amber-950/30 p-4 text-sm leading-6 text-amber-100">
-        Testnet only: heuristic triage never authorizes a payout by itself. Every reward requires
-        manual reviewer approval, an allowlisted wallet, and available MON in that project&apos;s
-        escrow.
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-            Project owner
-          </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Fund a bounty</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Deposit native test MON into this project&apos;s isolated reward balance.
-          </p>
-          <form onSubmit={deposit} className="mt-6 space-y-4">
-            <Field
-              label="Project ID"
-              value={projectId}
-              onChange={setProjectId}
-              placeholder="e.g. vault-v1"
-              required
-            />
-            <Field
-              label="Deposit amount (MON)"
-              value={depositAmount}
-              onChange={setDepositAmount}
-              placeholder="0.01"
-              type="number"
-              required
-            />
-            <button
-              disabled={isWriting}
-              className="w-full rounded-lg bg-emerald-400 px-4 py-3 font-semibold text-emerald-950 hover:bg-emerald-300 disabled:opacity-50"
-            >
-              {isWriting ? "Waiting for wallet…" : "Deposit bounty"}
-            </button>
-          </form>
-        </section>
-
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-sky-400">
-            Security researcher
-          </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Submit a vulnerability</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Your connected wallet is used as the researcher address.
-          </p>
-          <form onSubmit={submitReport} className="mt-6 space-y-4">
-            <Field
-              label="Project ID"
-              value={projectId}
-              onChange={setProjectId}
-              placeholder="e.g. vault-v1"
-              required
-            />
-            <Field
-              label="Report title"
-              value={title}
-              onChange={setTitle}
-              placeholder="Short finding summary"
-              required
-            />
-            <TextArea
-              label="Description"
-              value={description}
-              onChange={setDescription}
-              placeholder="Explain impact and reproduction conditions…"
-              required
-            />
-            <TextArea
-              label="Proof of concept"
-              value={poc}
-              onChange={setPoc}
-              placeholder="PoC, steps to reproduce, or transaction hash…"
-              required
-            />
-            <button
-              disabled={isSubmitting}
-              className="w-full rounded-lg bg-sky-400 px-4 py-3 font-semibold text-sky-950 hover:bg-sky-300 disabled:opacity-50"
-            >
-              {isSubmitting ? "Submitting…" : "Submit for review"}
-            </button>
-          </form>
-        </section>
-      </div>
-
-      {result && (
-        <section className="mt-7 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-                Triage result · {result.status}
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-white">{result.severity} severity</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Suggested payout: {result.suggested_payout_percentage}%
-              </p>
-            </div>
-            {result.canClaim && (
-              <button
-                disabled={isWriting}
-                onClick={claimReward}
-                className="rounded-lg bg-emerald-400 px-4 py-2.5 font-semibold text-emerald-950 hover:bg-emerald-300 disabled:opacity-50"
-              >
-                {isWriting ? "Waiting for wallet…" : `Claim ${formatEther(BigInt(result.amount))} MON`}
+            {address ? (
+              <div className="wallet-controls">
+                <span className="wallet-address" title={address}>
+                  <span className="wallet-dot" />
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </span>
+                <button className="button button-quiet button-small" onClick={disconnectWallet}>
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button className="button button-primary button-small" onClick={connectWallet}>
+                Connect wallet <Icon name="arrow" />
               </button>
             )}
           </div>
-          <p className="mt-4 text-sm leading-6 text-slate-300">{result.reasoning}</p>
-          {result.reviewStatus === "PENDING_REVIEW" && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-amber-300">Waiting for a human reviewer. No payout is authorized yet.</p>
-              <button
-                onClick={refreshReportStatus}
-                className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-emerald-500"
-              >
-                Refresh review status
-              </button>
-            </div>
-          )}
-          {result.reviewStatus === "APPROVED" && !result.canClaim && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-amber-300">This payout signature has expired. A reviewer must renew it.</p>
-              <button
-                onClick={refreshReportStatus}
-                className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-emerald-500"
-              >
-                Refresh review status
-              </button>
-            </div>
-          )}
-          {result.signingNote && <p className="mt-3 text-sm text-amber-300">{result.signingNote}</p>}
-          <p className="mt-3 break-all font-mono text-xs text-slate-500">
-            Report hash: {result.reportHash}
-          </p>
-        </section>
-      )}
+        </header>
 
-      {message && (
-        <p
-          role="status"
-          className="mt-6 break-all rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300"
-        >
-          {message}
-        </p>
-      )}
-    </main>
+        <main className="workspace" id="overview">
+          <section className="welcome-section">
+            <div>
+              <p className="eyebrow"><span className="eyebrow-line" /> BUG BOUNTY WORKSPACE</p>
+              <h1>Make every finding<br className="desktop-break" /> count.</h1>
+              <p className="welcome-copy">
+                A thoughtful home for security research, project rewards, and responsible disclosure.
+              </p>
+            </div>
+            <a className="text-link" href="#report">Share a finding <Icon name="arrow" /></a>
+          </section>
+
+          <section className="overview-grid" aria-label="Workspace overview">
+            <div className="hero-card">
+              <div className="hero-card-content">
+                <span className="hero-label"><span className="hero-label-dot" /> A safer way to build</span>
+                <h2>Good security<br />is a team effort.</h2>
+                <p>Fund meaningful research. Give every vulnerability the review it deserves.</p>
+                <a className="hero-link" href="#fund">Get started <Icon name="arrow" /></a>
+              </div>
+              <div className="hero-art" aria-hidden="true">
+                <span className="art-orbit orbit-one" />
+                <span className="art-orbit orbit-two" />
+                <span className="art-orbit orbit-three" />
+                <span className="art-core"><Icon name="shield" /></span>
+                <span className="art-spark spark-one" />
+                <span className="art-spark spark-two" />
+              </div>
+              <span className="hero-number" aria-hidden="true">01</span>
+            </div>
+
+            <div className="status-card">
+              <div className="status-card-heading">
+                <div>
+                  <p className="card-overline">YOUR WORKSPACE</p>
+                  <h2>All set to begin</h2>
+                </div>
+                <span className="status-card-icon"><Icon name="spark" /></span>
+              </div>
+              <div className="status-row">
+                <span className="status-row-icon"><Icon name="grid" /></span>
+                <span className="status-row-copy"><strong>Network</strong><small>Native test MON</small></span>
+                <span
+                  className={`status-value ${chainId === targetChainId ? "status-connected" : chainId !== null ? "status-warning" : ""}`}
+                >
+                  {chainId === targetChainId ? "Connected" : chainId !== null ? "Switch network" : "Testnet"}
+                </span>
+              </div>
+              <div className="status-row">
+                <span className="status-row-icon"><Icon name="shield" /></span>
+                <span className="status-row-copy"><strong>Wallet</strong><small>{address ? "Ready for transactions" : "Connect to get started"}</small></span>
+                <span className={`status-value ${address ? "status-connected" : ""}`}>{address ? "Ready" : "Optional"}</span>
+              </div>
+              <div className="status-row">
+                <span className="status-row-icon"><Icon name="coins" /></span>
+                <span className="status-row-copy"><strong>Reward review</strong><small>Human approval required</small></span>
+                <span className="status-value status-manual">Manual</span>
+              </div>
+              <p className="status-footnote"><span className="footnote-dot" /> Test environment · Chain ID 10143</p>
+            </div>
+          </section>
+
+          <div className="notice-banner">
+            <span className="notice-icon"><Icon name="shield" /></span>
+            <p><strong>Testnet prototype</strong><span>Heuristic triage never authorizes a payout. Rewards require manual reviewer approval, an allowlisted wallet, and available MON in the project escrow.</span></p>
+          </div>
+
+          <section className="actions-section" aria-labelledby="actions-heading">
+            <div className="section-heading">
+              <div>
+                <p className="card-overline">TAKE THE NEXT STEP</p>
+                <h2 id="actions-heading">Make an impact</h2>
+              </div>
+              <span className="section-caption">Two ways to strengthen the ecosystem</span>
+            </div>
+
+            <div className="action-grid">
+              <section className="action-card" id="fund">
+                <div className="action-card-top">
+                  <span className="action-icon"><Icon name="coins" /></span>
+                  <span className="action-number">01 / PROJECT OWNER</span>
+                </div>
+                <h3>Fund a bounty</h3>
+                <p className="action-description">Put native test MON behind your project and reward the people who help secure it.</p>
+                <form onSubmit={deposit} className="form-stack">
+                  <Field
+                    label="Project ID"
+                    value={projectId}
+                    onChange={setProjectId}
+                    placeholder="e.g. vault-v1"
+                    required
+                  />
+                  <Field
+                    label="Deposit amount"
+                    value={depositAmount}
+                    onChange={setDepositAmount}
+                    placeholder="0.01"
+                    type="number"
+                    required
+                  />
+                  <button disabled={isWriting} className="button button-primary button-submit">
+                    {isWriting ? "Waiting for wallet…" : "Deposit bounty"}
+                    {!isWriting && <Icon name="arrow" />}
+                  </button>
+                </form>
+              </section>
+
+              <section className="action-card" id="report">
+                <div className="action-card-top">
+                  <span className="action-icon action-icon-muted"><Icon name="shield" /></span>
+                  <span className="action-number">02 / SECURITY RESEARCHER</span>
+                </div>
+                <h3>Submit a finding</h3>
+                <p className="action-description">Share what you found. Your connected wallet is used as the researcher address.</p>
+                <form onSubmit={submitReport} className="form-stack">
+                  <Field
+                    label="Project ID"
+                    value={projectId}
+                    onChange={setProjectId}
+                    placeholder="e.g. vault-v1"
+                    required
+                  />
+                  <Field
+                    label="Report title"
+                    value={title}
+                    onChange={setTitle}
+                    placeholder="Short finding summary"
+                    required
+                  />
+                  <TextArea
+                    label="Description"
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Explain impact and reproduction conditions…"
+                    required
+                  />
+                  <TextArea
+                    label="Proof of concept"
+                    value={poc}
+                    onChange={setPoc}
+                    placeholder="PoC, steps to reproduce, or transaction hash…"
+                    required
+                  />
+                  <button disabled={isSubmitting} className="button button-secondary button-submit">
+                    {isSubmitting ? "Submitting…" : "Submit for review"}
+                    {!isSubmitting && <Icon name="arrow" />}
+                  </button>
+                </form>
+              </section>
+            </div>
+          </section>
+
+          {result && (
+            <section className="result-card" aria-live="polite">
+              <div className="result-heading">
+                <div>
+                  <p className="card-overline">TRIAGE RESULT · {result.status}</p>
+                  <h2>{result.severity} severity</h2>
+                  <p className="result-suggestion">Suggested payout: {result.suggested_payout_percentage}%</p>
+                </div>
+                {result.canClaim && (
+                  <button
+                    disabled={isWriting}
+                    onClick={claimReward}
+                    className="button button-primary"
+                  >
+                    {isWriting ? "Waiting for wallet…" : `Claim ${formatEther(BigInt(result.amount))} MON`}
+                  </button>
+                )}
+              </div>
+              <p className="result-reasoning">{result.reasoning}</p>
+              {result.reviewStatus === "PENDING_REVIEW" && (
+                <div className="review-notice">
+                  <p>Waiting for a human reviewer. No payout is authorized yet.</p>
+                  <button onClick={refreshReportStatus} className="button button-quiet">Refresh review status</button>
+                </div>
+              )}
+              {result.reviewStatus === "APPROVED" && !result.canClaim && (
+                <div className="review-notice">
+                  <p>This payout signature has expired. A reviewer must renew it.</p>
+                  <button onClick={refreshReportStatus} className="button button-quiet">Refresh review status</button>
+                </div>
+              )}
+              {result.signingNote && <p className="result-note">{result.signingNote}</p>}
+              <p className="report-hash">Report hash <code>{result.reportHash}</code></p>
+            </section>
+          )}
+
+          {message && <p role="status" className="feedback-message">{message}</p>}
+          <footer className="workspace-footer">
+            <span>BLOCKPATCH <span className="footer-dot">·</span> BUILT FOR RESPONSIBLE DISCLOSURE</span>
+            <a href="#overview">Back to top ↑</a>
+          </footer>
+        </main>
+      </div>
+    </div>
   );
+}
+
+function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" }) {
+  const shared = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true as const,
+  };
+
+  if (name === "grid") {
+    return <svg {...shared}><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></svg>;
+  }
+  if (name === "coins") {
+    return <svg {...shared}><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v5c0 1.7 3.1 3 7 3 1.1 0 2.1-.1 3-.3M5 11v5c0 1.7 3.1 3 7 3 1.6 0 3-.2 4.2-.7" /><path d="M19 12v6m-3-3h6" /></svg>;
+  }
+  if (name === "shield") {
+    return <svg {...shared}><path d="M12 3 19 6v5c0 4.6-2.9 8-7 10-4.1-2-7-5.4-7-10V6l7-3Z" /><path d="m9 12 2 2 4-4" /></svg>;
+  }
+  if (name === "arrow") {
+    return <svg {...shared}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
+  }
+  return <svg {...shared}><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" /><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" /></svg>;
 }
 
 function Field({
@@ -428,8 +531,8 @@ function Field({
   required?: boolean;
 }) {
   return (
-    <label className="block text-sm text-slate-300">
-      {label}
+    <label className="field-label">
+      <span>{label}</span>
       <input
         type={type}
         required={required}
@@ -438,7 +541,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-emerald-500"
+        className="field-control"
       />
     </label>
   );
@@ -458,15 +561,15 @@ function TextArea({
   required?: boolean;
 }) {
   return (
-    <label className="block text-sm text-slate-300">
-      {label}
+    <label className="field-label">
+      <span>{label}</span>
       <textarea
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={3}
-        className="mt-2 w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-emerald-500"
+        className="field-control field-textarea"
       />
     </label>
   );
