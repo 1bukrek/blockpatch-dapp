@@ -4,7 +4,8 @@
   "description": "A small, testnet-only bug bounty prototype with a Solidity reward contract, an Express triage/signing API, and a Next.js wallet dApp.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm --prefix backend test",
+    "build": "npm --prefix frontend run build",
     "frontend": "npm --prefix frontend run dev",
     "backend": "npm --prefix backend run dev"
   },

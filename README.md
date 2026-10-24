@@ -127,13 +127,30 @@ npm install
 Copy-Item .env.example .env.local
 ```
 
+<<<<<<< Updated upstream
 Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address. This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. Restart the frontend after changing `.env.local`, because Next.js reads public environment variables when it starts. The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
+=======
+Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed contract address (not your wallet address). This is separate from `CONTRACT_ADDRESS` in `backend/.env`; changing the backend value does not configure the frontend. Set `BACKEND_URL=http://localhost:4000` in `frontend/.env.local` to point Next.js to the API (the example file already contains this setting). Next.js proxies `/api/*` requests to the backend, so browser requests use the frontend's origin. The app checks that contract bytecode exists on Monad Testnet before submitting a deposit or claim. Frontend environment changes are not applied to the running Next.js process: stop and restart the frontend after changing `.env.local` (and rebuild before starting a production build). The frontend only allows Monad Testnet (chain ID `10143`). Start the app:
+>>>>>>> Stashed changes
 
 ```powershell
 npm run dev
 ```
 
 Open `http://localhost:3000`, connect MetaMask, deposit native MON for a project, then submit a report using the same project ID. Use **My bounties** in the sidebar to track your deposits, remaining project escrow, and the latest deposit transaction. Project names and descriptions are stored in that browser; on-chain funding history and balances remain available from Monad Testnet. Open `/profile/<wallet-address>` to view or share a public researcher profile; it shows project IDs, severity, and review outcome, never report contents. Project IDs are UTF-8 keccak256-hashed consistently by the frontend and backend.
+
+### Deploy the frontend to Vercel
+
+Create a Vercel project for this repository and set its **Root Directory** to `frontend`. Let Vercel detect Next.js; keep the default build command (`npm run build`), install command, and `.next` output settings. The frontend has its own `package-lock.json`, so Vercel can install it independently of the repository-root package.
+
+Set these project environment variables before deploying:
+
+- `NEXT_PUBLIC_CONTRACT_ADDRESS`: the deployed Monad Testnet contract address.
+- `BACKEND_URL`: the absolute HTTPS base URL of the separately hosted backend, for example `https://api.example.com` (no `/api` suffix). This is a server-side Next.js setting and is not exposed to browser code.
+
+The backend is a separate deployment: it uses SQLite and must run somewhere with persistent storage. Set `FRONTEND_ORIGIN` to the deployed frontend origin only if browser clients will call the backend directly; the normal frontend integration is proxied server-side and does not depend on browser CORS. Do not add reviewer credentials or signing keys to Vercel frontend variables; any `NEXT_PUBLIC_` variable is included in browser code. Changing either frontend environment variable requires a new Vercel deployment. A production build requires `BACKEND_URL` and fails clearly if it is not configured.
+
+To verify a production build locally, run `npm ci` and `npm run build` from `frontend`.
 
 ## API summary
 
