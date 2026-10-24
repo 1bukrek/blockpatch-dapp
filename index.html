@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c1012" />
+    <meta
+      name="description"
+      content="BlockPatch Core Intelligence bug bounty triage dashboard."
+    />
+    <title>BlockPatch — Core Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="BlockPatch home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M7 7h8v8H7zM17 17h8v8h-8z" stroke="currentColor" stroke-width="2" />
+              <path d="M18 7h7v7h-7zM7 18h7v7H7z" fill="currentColor" opacity=".42" />
+              <path d="m14 14 4 4" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </span>
+          <span class="brand-name">blockpatch<span>.</span></span>
+        </a>
+
+        <div class="workspace-label">WORKSPACE</div>
+        <button class="workspace-switcher" type="button">
+          <span class="workspace-avatar">B</span>
+          <span class="workspace-name">BlockPatch Core</span>
+          <span class="chevron">⌄</span>
+        </button>
+
+        <div class="nav-group">
+          <div class="nav-label">PLATFORM</div>
+          <a class="nav-item" href="#overview">
+            <span class="nav-icon">◫</span> Overview
+          </a>
+          <a class="nav-item active" href="#triage">
+            <span class="nav-icon">⌕</span> Intelligence
+            <span class="nav-pill">AI</span>
+          </a>
+          <a class="nav-item" href="#reports">
+            <span class="nav-icon">▤</span> Bug reports
+            <span class="nav-count">12</span>
+          </a>
+          <a class="nav-item" href="#bounties">
+            <span class="nav-icon">◎</span> Bounties
+          </a>
+          <a class="nav-item" href="#researchers">
+            <span class="nav-icon">♙</span> Researchers
+          </a>
+        </div>
+
+        <div class="nav-group secondary-nav">
+          <div class="nav-label">MANAGE</div>
+          <a class="nav-item" href="#activity"><span class="nav-icon">◷</span> Activity</a>
+          <a class="nav-item" href="#settings"><span class="nav-icon">⚙</span> Settings</a>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="plan-card">
+            <div class="plan-heading"><span class="status-dot"></span> Mainnet monitor</div>
+            <p>All systems operational</p>
+            <div class="plan-track"><span></span></div>
+            <div class="plan-meta"><span>Monthly reports</span><span>12 / 50</span></div>
+          </div>
+          <button class="profile-button" type="button">
+            <span class="profile-avatar">UG</span>
+            <span class="profile-copy"><strong>Umut G.</strong><small>Workspace admin</small></span>
+            <span class="profile-more">•••</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="triage">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Platform</span><span class="crumb-slash">/</span><strong>Intelligence</strong></div>
+          <div class="topbar-actions">
+            <span class="environment-tag"><span></span> MAIN BRANCH</span>
+            <button class="icon-button" type="button" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <i></i>
+            </button>
+            <button class="help-button" type="button">? <span>Help</span></button>
+          </div>
+        </header>
+
+        <div class="page-wrap">
+          <section class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> CORE INTELLIGENCE</div>
+              <h1>Bug report <span>triage</span></h1>
+              <p class="page-subtitle">Validate findings, catch duplicates, and prepare on-chain decisions.</p>
+            </div>
+            <div class="heading-meta"><span class="live-dot"></span><span>Engine ready</span><span class="meta-divider"></span><span>Last synced just now</span></div>
+          </section>
+
+          <section class="stats-row" aria-label="Triage statistics">
+            <article class="stat-card">
+              <div class="stat-top"><span>REPORTS ANALYZED</span><span class="stat-icon mint">⌕</span></div>
+              <div class="stat-value">1,284 <span class="stat-change">↗ 12.8%</span></div>
+              <div class="stat-foot">Compared to last month</div>
+              <div class="sparkline"><svg viewBox="0 0 120 28" preserveAspectRatio="none"><path d="M1 22 12 18 22 20 34 10 45 15 56 8 67 12 78 5 89 11 100 3 110 7 119 2" /></svg></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span>DUPLICATES CAUGHT</span><span class="stat-icon amber">⧉</span></div>
+              <div class="stat-value">18.6<span class="unit">%</span> <span class="stat-change">↗ 2.4%</span></div>
+              <div class="stat-foot">Of all submitted reports</div>
+              <div class="sparkline amber-line"><svg viewBox="0 0 120 28" preserveAspectRatio="none"><path d="M1 20 12 22 22 14 34 17 45 9 56 13 67 6 78 11 89 4 100 10 110 3 119 6" /></svg></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span>AVG. CONFIDENCE</span><span class="stat-icon blue">◈</span></div>
+              <div class="stat-value">94.2<span class="unit">%</span> <span class="stat-change">↗ 1.2%</span></div>
+              <div class="stat-foot">Across accepted findings</div>
+              <div class="sparkline blue-line"><svg viewBox="0 0 120 28" preserveAspectRatio="none"><path d="M1 20 12 17 22 19 34 12 45 15 56 7 67 11 78 6 89 8 100 3 110 6 119 2" /></svg></div>
+            </article>
+            <article class="stat-card stat-card-queue">
+              <div class="stat-top"><span>AWAITING REVIEW</span><span class="stat-icon violet">◷</span></div>
+              <div class="stat-value">07 <span class="queue-label">reports</span></div>
+              <div class="stat-foot">Oldest report <strong>2h 14m</strong> ago</div>
+              <div class="queue-avatars"><span>MK</span><span>JL</span><span>+3</span><small>reviewers online</small></div>
+            </article>
+          </section>
+
+          <section class="workbench">
+            <div class="form-panel panel">
+              <div class="panel-heading">
+                <div class="section-title"><span class="step-number">01</span><div><h2>Submit a report</h2><p>Provide the finding details for analysis.</p></div></div>
+                <button class="text-button" id="sample-button" type="button"><span>↻</span> Load sample</button>
+              </div>
+              <form id="report-form">
+                <label class="field-label" for="report-title">REPORT TITLE <span class="required">*</span></label>
+                <input id="report-title" name="title" type="text" placeholder="e.g. Unprotected withdraw allows unauthorized access" required />
+
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label" for="affected-location">AFFECTED FILE / FUNCTION <span class="required">*</span></label>
+                    <div class="input-with-icon"><span>⌘</span><input id="affected-location" name="location" type="text" placeholder="contracts/Vault.sol · withdraw()" required /></div>
+                  </div>
+                  <div class="field-group severity-field">
+                    <label class="field-label" for="severity">REPORTED SEVERITY</label>
+                    <div class="select-wrap"><select id="severity" name="severity"><option value="HIGH">High</option><option value="CRITICAL">Critical</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select><span class="select-arrow">⌄</span></div>
+                  </div>
+                </div>
+
+                <label class="field-label" for="description">VULNERABILITY DESCRIPTION <span class="required">*</span></label>
+                <textarea id="description" name="description" rows="4" placeholder="Describe the issue, its impact, and the conditions needed to reproduce it..." required></textarea>
+
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label" for="poc">PROOF OF CONCEPT <span class="optional">OPTIONAL</span></label>
+                    <div class="code-editor">
+                      <div class="editor-bar"><span class="editor-dot"></span><span class="editor-dot"></span><span class="editor-dot"></span><span class="editor-file">reproduction-steps.txt</span><span class="editor-type">TEXT</span></div>
+                      <textarea id="poc" name="poc" rows="4" placeholder="// Add reproduction steps, a PoC, or transaction hash..."></textarea>
+                    </div>
+                  </div>
+                  <div class="field-group history-field">
+                    <label class="field-label" for="history">HISTORICAL REPORTS <span class="optional">REFERENCE</span></label>
+                    <div class="history-box">
+                      <div class="history-top"><span class="history-check">✓</span><span>Duplicate database connected</span><span class="history-count">1,284</span></div>
+                      <p>Report will be checked against resolved and pending findings.</p>
+                      <div class="history-tags"><span><i class="tag-dot green"></i> Resolved</span><span><i class="tag-dot yellow"></i> Pending</span></div>
+                    </div>
+                    <input id="history" name="history" type="hidden" value="connected" />
+                  </div>
+                </div>
+
+                <div class="form-footer">
+                  <div class="privacy-note"><span>♧</span> Analysis runs locally in demo mode</div>
+                  <button class="analyze-button" type="submit"><span class="button-spark">✳</span> Analyze report <span class="button-arrow">→</span></button>
+                </div>
+              </form>
+            </div>
+
+            <aside class="result-panel panel" aria-live="polite">
+              <div class="result-heading">
+                <div class="section-title"><span class="step-number">02</span><div><h2>Analysis result</h2><p>AI-powered triage output.</p></div></div>
+                <span class="demo-badge"><span></span> DEMO</span>
+              </div>
+              <div id="empty-result" class="empty-result">
+                <div class="orb-wrap"><div class="orb"><span>✳</span></div><span class="orb-ring ring-one"></span><span class="orb-ring ring-two"></span></div>
+                <h3>Ready when you are</h3>
+                <p>Submit a report to see its validation, duplicate check, and suggested payout.</p>
+                <div class="pipeline">
+                  <div><span class="pipeline-icon">⌕</span><span>Similarity scan</span><span class="pipeline-state">READY</span></div>
+                  <div><span class="pipeline-icon">◈</span><span>Severity assessment</span><span class="pipeline-state">READY</span></div>
+                  <div><span class="pipeline-icon">{ }</span><span>Payload generation</span><span class="pipeline-state">READY</span></div>
+                </div>
+              </div>
+              <div id="analysis-result" class="analysis-result" hidden>
+                <div id="decision-card" class="decision-card">
+                  <div class="decision-top"><span id="decision-icon" class="decision-icon">✓</span><span id="decision-status" class="decision-status">ACCEPTED</span><span id="confidence" class="confidence">0.00 confidence</span></div>
+                  <p id="decision-reason"></p>
+                  <div class="decision-meta"><span>SEVERITY <strong id="result-severity">HIGH</strong></span><span>PAYOUT <strong id="result-payout">60%</strong></span></div>
+                </div>
+                <div class="payload-heading"><div><span class="payload-title">CONTRACT PAYLOAD</span><span class="payload-subtitle">Deterministic JSON output</span></div><button id="copy-button" class="copy-button" type="button">▢ <span>Copy</span></button></div>
+                <pre class="json-output"><code id="json-output">{}</code></pre>
+                <div class="payload-note"><span>ⓘ</span> Demo heuristic only. Verify findings manually before on-chain use.</div>
+              </div>
+              <div id="loading-result" class="loading-result" hidden>
+                <span class="loading-spinner"></span><strong>Analyzing report</strong><span>Comparing against report history...</span>
+              </div>
+              <div class="result-bottom"><span class="security-lock">◇</span> Structured for on-chain verification</div>
+            </aside>
+          </section>
+
+          <footer class="page-footer"><span>© 2026 BlockPatch Protocol</span><span>CORE INTELLIGENCE <i></i> V 0.9.4</span></footer>
+        </div>
+      </main>
+    </div>
+    <div id="toast" class="toast" role="status"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
