@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { BrowserProvider, Contract, formatEther, getAddress, id, isAddress, parseEther } from "ethers";
 import { bountyShieldAbi, contractAddress } from "@/lib/contract";
+import { saveBountyDetails } from "@/lib/bounties";
 
 type ApiResult = {
   reportHash: `0x${string}`;
@@ -19,6 +20,14 @@ type ApiResult = {
   signingNote?: string;
 };
 
+type TransactionFeedback = {
+  action: "Bounty deposit" | "Reward claim";
+  status: "pending" | "confirmed" | "failed";
+  hash?: string;
+  blockNumber?: number;
+  description: string;
+};
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const targetChainId = 10143;
 const validContractAddress =
@@ -28,12 +37,15 @@ export default function Home() {
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [projectId, setProjectId] = useState("");
+  const [bountyName, setBountyName] = useState("");
+  const [bountyDetails, setBountyDetails] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poc, setPoc] = useState("");
   const [result, setResult] = useState<ApiResult | null>(null);
   const [message, setMessage] = useState("");
+  const [transactionFeedback, setTransactionFeedback] = useState<TransactionFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
 
@@ -107,6 +119,7 @@ export default function Home() {
   async function deposit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setTransactionFeedback(null);
     if (!address) {
       setMessage("Connect your wallet before depositing.");
       return;
@@ -117,23 +130,61 @@ export default function Home() {
       );
       return;
     }
-    if (!projectId.trim() || !depositAmount) {
-      setMessage("Enter a project ID and a positive MON amount.");
+    if (!projectId.trim() || !bountyName.trim() || !bountyDetails.trim() || !depositAmount) {
+      setMessage("Enter a project ID, bounty name, details, and a positive MON amount.");
       return;
     }
 
     setIsWriting(true);
+    let transactionHash: string | undefined;
     try {
       const value = parseEther(depositAmount);
       if (value <= 0n) throw new Error("Deposit amount must be greater than zero.");
       const signer = await getWalletSigner();
       const contract = new Contract(contractAddress, bountyShieldAbi, signer);
       const transaction = await contract.depositBounty(id(projectId.trim()), { value });
-      setMessage(`Deposit submitted: ${transaction.hash}`);
-      await transaction.wait();
-      setMessage(`Deposit confirmed: ${transaction.hash}`);
+      transactionHash = transaction.hash;
+      setTransactionFeedback({
+        action: "Bounty deposit",
+        status: "pending",
+        hash: transactionHash,
+        description: "Submitted to Monad Testnet. Waiting for the transaction to be confirmed.",
+      });
+      const receipt = await transaction.wait();
+      if (!receipt) throw new Error("No transaction receipt was returned.");
+      try {
+        saveBountyDetails({
+          owner: address,
+          projectId: projectId.trim(),
+          name: bountyName.trim(),
+          details: bountyDetails.trim(),
+          updatedAt: Date.now(),
+        });
+        setTransactionFeedback({
+          action: "Bounty deposit",
+          status: "confirmed",
+          hash: transactionHash,
+          blockNumber: receipt.blockNumber,
+          description: "Confirmed on Monad Testnet. Bounty details were saved in this browser.",
+        });
+      } catch (error) {
+        setTransactionFeedback({
+          action: "Bounty deposit",
+          status: "confirmed",
+          hash: transactionHash,
+          blockNumber: receipt.blockNumber,
+          description: `Confirmed on-chain, but the bounty details could not be saved in this browser: ${
+            error instanceof Error ? error.message : "browser storage is unavailable."
+          }`,
+        });
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Deposit transaction failed.");
+      setTransactionFeedback({
+        action: "Bounty deposit",
+        status: "failed",
+        hash: transactionHash,
+        description: transactionErrorMessage(error, "bounty deposit", transactionHash),
+      });
     } finally {
       setIsWriting(false);
     }
@@ -186,6 +237,7 @@ export default function Home() {
 
   async function claimReward() {
     setMessage("");
+    setTransactionFeedback(null);
     if (!address) {
       setMessage("Connect your researcher wallet before claiming.");
       return;
@@ -206,6 +258,7 @@ export default function Home() {
     }
 
     setIsWriting(true);
+    let transactionHash: string | undefined;
     try {
       const signer = await getWalletSigner();
       const contract = new Contract(contractAddress, bountyShieldAbi, signer);
@@ -217,11 +270,29 @@ export default function Home() {
         result.expiresAt,
         result.signature,
       );
-      setMessage(`Claim submitted: ${transaction.hash}`);
-      await transaction.wait();
-      setMessage(`Claim confirmed: ${transaction.hash}`);
+      transactionHash = transaction.hash;
+      setTransactionFeedback({
+        action: "Reward claim",
+        status: "pending",
+        hash: transactionHash,
+        description: "Submitted to Monad Testnet. Waiting for the reward transfer to be confirmed.",
+      });
+      const receipt = await transaction.wait();
+      if (!receipt) throw new Error("No transaction receipt was returned.");
+      setTransactionFeedback({
+        action: "Reward claim",
+        status: "confirmed",
+        hash: transactionHash,
+        blockNumber: receipt.blockNumber,
+        description: "Confirmed on Monad Testnet. Your reward has been transferred to your wallet.",
+      });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Reward claim failed.");
+      setTransactionFeedback({
+        action: "Reward claim",
+        status: "failed",
+        hash: transactionHash,
+        description: transactionErrorMessage(error, "reward claim", transactionHash),
+      });
     } finally {
       setIsWriting(false);
     }
@@ -246,11 +317,21 @@ export default function Home() {
             <Icon name="grid" />
             <span>Overview</span>
           </a>
-          <a className="nav-link" href="#fund">
+          <a className="nav-link" href="/#fund">
             <Icon name="coins" />
             <span>Fund a bounty</span>
           </a>
-          <a className="nav-link" href="#report">
+          <a className="nav-link" href="/bounties">
+            <Icon name="grid" />
+            <span>My bounties</span>
+          </a>
+          {address && (
+            <a className="nav-link" href={`/profile/${address}`}>
+              <Icon name="shield" />
+              <span>My profile</span>
+            </a>
+          )}
+          <a className="nav-link" href="/#report">
             <Icon name="shield" />
             <span>Submit a report</span>
           </a>
@@ -274,10 +355,10 @@ export default function Home() {
             </span>
             {address ? (
               <div className="wallet-controls">
-                <span className="wallet-address" title={address}>
+                <a className="wallet-address" title={`View public profile for ${address}`} href={`/profile/${address}`}>
                   <span className="wallet-dot" />
                   {address.slice(0, 6)}…{address.slice(-4)}
-                </span>
+                </a>
                 <button className="button button-quiet button-small" onClick={disconnectWallet}>
                   Disconnect
                 </button>
@@ -373,13 +454,27 @@ export default function Home() {
                   <span className="action-number">01 / PROJECT OWNER</span>
                 </div>
                 <h3>Fund a bounty</h3>
-                <p className="action-description">Put native test MON behind your project and reward the people who help secure it.</p>
+                <p className="action-description">Describe the program and put native test MON behind the security work you want to encourage.</p>
                 <form onSubmit={deposit} className="form-stack">
                   <Field
                     label="Project ID"
                     value={projectId}
                     onChange={setProjectId}
                     placeholder="e.g. vault-v1"
+                    required
+                  />
+                  <Field
+                    label="Bounty name"
+                    value={bountyName}
+                    onChange={setBountyName}
+                    placeholder="e.g. Vault V1 Security Program"
+                    required
+                  />
+                  <TextArea
+                    label="Bounty details"
+                    value={bountyDetails}
+                    onChange={setBountyDetails}
+                    placeholder="Describe the project, scope, assets to test, and what makes a useful finding…"
                     required
                   />
                   <Field
@@ -390,8 +485,11 @@ export default function Home() {
                     type="number"
                     required
                   />
+                  <p className="form-helper">
+                    Your name and details are saved in this browser. Funding amount and escrow balance are verified on-chain.
+                  </p>
                   <button disabled={isWriting} className="button button-primary button-submit">
-                    {isWriting ? "Waiting for wallet…" : "Deposit bounty"}
+                    {isWriting ? "Waiting for wallet…" : "Fund bounty"}
                     {!isWriting && <Icon name="arrow" />}
                   </button>
                 </form>
@@ -479,6 +577,35 @@ export default function Home() {
           )}
 
           {message && <p role="status" className="feedback-message">{message}</p>}
+          {transactionFeedback && (
+            <div
+              role={transactionFeedback.status === "failed" ? "alert" : "status"}
+              className={`transaction-feedback transaction-${transactionFeedback.status}`}
+              aria-live="polite"
+            >
+              <span className="transaction-status-icon">
+                <Icon name={transactionFeedback.status === "confirmed" ? "check" : transactionFeedback.status === "failed" ? "close" : "refresh"} />
+              </span>
+              <div className="transaction-feedback-copy">
+                <strong>
+                  {transactionFeedback.action} {transactionFeedback.status}
+                  {transactionFeedback.blockNumber !== undefined && ` · Block ${transactionFeedback.blockNumber}`}
+                </strong>
+                <span>{transactionFeedback.description}</span>
+                {transactionFeedback.hash && (
+                  <a
+                    className="transaction-explorer-link"
+                    href={`https://testnet.monadvision.com/tx/${transactionFeedback.hash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View transaction {transactionFeedback.hash.slice(0, 10)}…{transactionFeedback.hash.slice(-8)}
+                    <Icon name="arrow" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
           <footer className="workspace-footer">
             <span>BLOCKPATCH <span className="footer-dot">·</span> BUILT FOR RESPONSIBLE DISCLOSURE</span>
             <a href="#overview">Back to top ↑</a>
@@ -489,7 +616,28 @@ export default function Home() {
   );
 }
 
-function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" }) {
+function transactionErrorMessage(
+  error: unknown,
+  action: string,
+  transactionHash?: string,
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error.code === 4001 || error.code === "ACTION_REJECTED") &&
+    !transactionHash
+  ) {
+    return "You declined the wallet request. No transaction was sent.";
+  }
+
+  const detail = error instanceof Error ? error.message : "An unknown wallet error occurred.";
+  return transactionHash
+    ? `The ${action} transaction did not confirm. Check its explorer status before trying again. ${detail}`
+    : `Could not submit the ${action} transaction. No funds were moved. ${detail}`;
+}
+
+function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" | "refresh" | "check" | "close" }) {
   const shared = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -511,6 +659,15 @@ function Icon({ name }: { name: "grid" | "coins" | "shield" | "arrow" | "spark" 
   }
   if (name === "arrow") {
     return <svg {...shared}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
+  }
+  if (name === "refresh") {
+    return <svg {...shared}><path d="M20 7v5h-5M4 17v-5h5" /><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2" /></svg>;
+  }
+  if (name === "check") {
+    return <svg {...shared}><path d="m5 12 4 4L19 6" /></svg>;
+  }
+  if (name === "close") {
+    return <svg {...shared}><path d="m6 6 12 12M18 6 6 18" /></svg>;
   }
   return <svg {...shared}><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" /><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" /></svg>;
 }

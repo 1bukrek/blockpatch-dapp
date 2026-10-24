@@ -111,6 +111,54 @@ test("requires human approval, signs only approved reports, and keeps duplicate 
       signingWallet.address,
     );
 
+    const secondReport = {
+      ...report,
+      title: "Oracle price can be manipulated",
+      description: "A user can alter the oracle price and affect settlement.",
+    };
+    const secondSubmissionResponse = await fetch(`${url}/api/submit-report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(secondReport),
+    });
+    const secondSubmission = await secondSubmissionResponse.json();
+    assert.equal(secondSubmission.reviewStatus, "PENDING_REVIEW");
+
+    const deniedRejection = await fetch(
+      `${url}/api/review/reports/${secondSubmission.reportHash}/reject`,
+      { method: "POST" },
+    );
+    assert.equal(deniedRejection.status, 401);
+
+    const rejectionResponse = await fetch(
+      `${url}/api/review/reports/${secondSubmission.reportHash}/reject`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${reviewerApiKey}` },
+      },
+    );
+    assert.equal(rejectionResponse.status, 200);
+    assert.equal((await rejectionResponse.json()).reviewStatus, "REJECTED");
+
+    const profileResponse = await fetch(`${url}/api/profiles/${researcherAddress}`);
+    assert.equal(profileResponse.status, 200);
+    const profile = await profileResponse.json();
+    assert.deepEqual(
+      {
+        submitted: profile.submitted,
+        projects: profile.projects,
+        accepted: profile.accepted,
+        rejected: profile.rejected,
+        pending: profile.pending,
+      },
+      { submitted: 2, projects: 1, accepted: 1, rejected: 1, pending: 0 },
+    );
+    assert.equal(profile.reports.length, 2);
+    assert.equal("title" in profile.reports[0], false);
+    assert.equal("description" in profile.reports[0], false);
+    assert.equal("poc" in profile.reports[0], false);
+    assert.equal("researcherAddress" in profile.reports[0], false);
+
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     store.close();
     store = new ReportStore(databasePath);
@@ -125,6 +173,17 @@ test("requires human approval, signs only approved reports, and keeps duplicate 
     assert.equal(duplicate.status, "DUPLICATE");
     assert.equal(duplicate.duplicate_of, submitted.reportHash);
     assert.equal(duplicate.canClaim, false);
+
+    const refreshedProfileResponse = await fetch(`${url}/api/profiles/${researcherAddress}`);
+    const refreshedProfile = await refreshedProfileResponse.json();
+    assert.equal(refreshedProfile.submitted, 3);
+    assert.equal(refreshedProfile.projects, 1);
+    assert.equal(refreshedProfile.accepted, 1);
+    assert.equal(refreshedProfile.rejected, 1);
+    assert.equal(refreshedProfile.reports.length, 3);
+
+    const invalidProfileResponse = await fetch(`${url}/api/profiles/not-an-address`);
+    assert.equal(invalidProfileResponse.status, 400);
   } finally {
     await new Promise((resolve) => server.close(() => resolve()));
     store.close();

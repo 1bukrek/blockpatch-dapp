@@ -181,6 +181,7 @@ export function createApp({ config, store = new ReportStore(config.databasePath)
       };
       const duplicate = store.findDuplicate(report);
       const result = analyzeReport(report, duplicate ? [{ ...report, ...duplicate }] : []);
+      store.addSubmission(report, result);
       if (result.status !== "DUPLICATE") store.add(report, result);
       return response.status(201).json(publicReport({
         ...result,
@@ -188,6 +189,18 @@ export function createApp({ config, store = new ReportStore(config.databasePath)
         reviewStatus: result.status === "ACCEPTED" ? "PENDING_REVIEW" : result.status,
         amount: "0",
       }));
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.get("/api/profiles/:address", (request, response, next) => {
+    try {
+      if (!isAddress(request.params.address)) {
+        return response.status(400).json({ error: "Invalid profile wallet address." });
+      }
+      const profile = store.getResearcherProfile(getAddress(request.params.address));
+      return response.json(profile);
     } catch (error) {
       return next(error);
     }
@@ -275,6 +288,26 @@ export function createApp({ config, store = new ReportStore(config.databasePath)
     } catch (error) {
       return next(error);
     }
+  });
+
+  app.post("/api/review/reports/:reportHash/reject", (request, response) => {
+    if (!isReviewer(request, config.reviewerApiKey)) {
+      return response.status(401).json({ error: "Reviewer authorization required." });
+    }
+    if (!isHexString(request.params.reportHash, 32)) {
+      return response.status(400).json({ error: "Invalid report hash." });
+    }
+
+    const reportHash = request.params.reportHash.toLowerCase();
+    const report = store.get(reportHash);
+    if (!report) return response.status(404).json({ error: "Report not found." });
+    if (report.status !== "ACCEPTED" || report.reviewStatus !== "PENDING_REVIEW") {
+      return response.status(409).json({ error: "Only pending accepted reports can be rejected." });
+    }
+    if (!store.reject(reportHash)) {
+      return response.status(409).json({ error: "Report review state changed; reload before retrying." });
+    }
+    return response.json(publicReport(store.get(reportHash)));
   });
 
   app.use((error, _request, response, _next) => {

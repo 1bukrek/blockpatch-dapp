@@ -34,6 +34,26 @@ export class ReportStore {
         created_at INTEGER NOT NULL,
         reviewed_at INTEGER
       );
+      CREATE TABLE IF NOT EXISTS researcher_submissions (
+        submission_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_hash TEXT NOT NULL,
+        researcher_address TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        triage_status TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS researcher_submissions_profile
+        ON researcher_submissions (researcher_address, created_at DESC);
+      INSERT INTO researcher_submissions (
+        report_hash, researcher_address, project_id, triage_status, severity, created_at
+      )
+      SELECT
+        r.report_hash, r.researcher_address, r.project_id, r.triage_status, r.severity, r.created_at
+      FROM reports r
+      WHERE NOT EXISTS (
+        SELECT 1 FROM researcher_submissions s WHERE s.report_hash = r.report_hash
+      );
       CREATE INDEX IF NOT EXISTS reports_duplicate_lookup
         ON reports (normalized_project_id, normalized_title, normalized_description, triage_status);
     `);
@@ -105,6 +125,47 @@ export class ReportStore {
         AND review_status = 'APPROVED'
         AND expires_at <= @now
     `);
+    this.rejectStatement = this.database.prepare(`
+      UPDATE reports
+      SET review_status = 'REJECTED',
+          reviewed_at = @reviewedAt
+      WHERE report_hash = @reportHash
+        AND triage_status = 'ACCEPTED'
+        AND review_status = 'PENDING_REVIEW'
+    `);
+    this.researcherProfileStatement = this.database.prepare(`
+      SELECT
+        s.project_id AS projectId,
+        s.triage_status AS status,
+        CASE
+          WHEN s.triage_status = 'ACCEPTED' THEN COALESCE(r.review_status, 'PENDING_REVIEW')
+          ELSE s.triage_status
+        END AS reviewStatus,
+        s.severity,
+        s.created_at AS createdAt,
+        CASE WHEN s.triage_status = 'ACCEPTED' THEN r.reviewed_at ELSE NULL END AS reviewedAt
+      FROM researcher_submissions s
+      LEFT JOIN reports r ON r.report_hash = s.report_hash
+      WHERE lower(s.researcher_address) = lower(?)
+      ORDER BY s.created_at DESC, s.submission_id DESC
+      LIMIT 100
+    `);
+    this.researcherProfileCountsStatement = this.database.prepare(`
+      SELECT
+        COUNT(*) AS submitted,
+        COUNT(DISTINCT lower(s.project_id)) AS projects,
+        COALESCE(SUM(CASE WHEN s.triage_status = 'ACCEPTED' AND r.review_status = 'APPROVED' THEN 1 ELSE 0 END), 0) AS accepted,
+        COALESCE(SUM(CASE WHEN s.triage_status = 'ACCEPTED' AND r.review_status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS rejected,
+        COALESCE(SUM(CASE WHEN s.triage_status = 'ACCEPTED' AND (r.review_status = 'PENDING_REVIEW' OR r.review_status IS NULL) THEN 1 ELSE 0 END), 0) AS pending
+      FROM researcher_submissions s
+      LEFT JOIN reports r ON r.report_hash = s.report_hash
+      WHERE lower(s.researcher_address) = lower(?)
+    `);
+    this.insertSubmissionStatement = this.database.prepare(`
+      INSERT INTO researcher_submissions (
+        report_hash, researcher_address, project_id, triage_status, severity, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `);
   }
 
   findDuplicate(report) {
@@ -137,6 +198,17 @@ export class ReportStore {
     });
   }
 
+  addSubmission(report, result) {
+    this.insertSubmissionStatement.run(
+      result.reportHash,
+      report.researcherAddress,
+      report.projectId,
+      result.status,
+      result.severity,
+      Date.now(),
+    );
+  }
+
   get(reportHash) {
     return this.findReportStatement.get(reportHash);
   }
@@ -159,6 +231,27 @@ export class ReportStore {
       reviewedAt: Date.now(),
       now: Math.floor(Date.now() / 1000),
     }).changes === 1;
+  }
+
+  reject(reportHash) {
+    return this.rejectStatement.run({
+      reportHash,
+      reviewedAt: Date.now(),
+    }).changes === 1;
+  }
+
+  getResearcherProfile(address) {
+    const counts = this.researcherProfileCountsStatement.get(address);
+    const reports = this.researcherProfileStatement.all(address);
+    return {
+      submitted: counts.submitted,
+      projects: counts.projects,
+      accepted: counts.accepted,
+      rejected: counts.rejected,
+      pending: counts.pending,
+      hasMore: counts.submitted > reports.length,
+      reports,
+    };
   }
 
   close() {

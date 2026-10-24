@@ -25,6 +25,8 @@ See the [official Monad Testnet network details](https://docs.monad.xyz/develope
 - The deployed contract enforces an immutable per-claim maximum reward and a maximum signature lifetime. Signatures bind the chain, contract, project, report, researcher, amount, and expiry.
 - A non-empty PoC and heuristic severity are **not** approval. Reports remain pending until a reviewer inspects them and approves an amount through the authenticated backend API.
 - Duplicate history and review state are stored in SQLite and survive backend restarts.
+- Project owners can add a bounty name and details, then view their deposits and each project’s live escrow balance on the **My bounties** page. Project descriptions are saved in the browser that submitted them; deposit events and escrow balances are read from Monad Testnet.
+- Researchers have public wallet profiles at `/profile/<wallet-address>` with aggregate submitted, reviewer-approved, reviewer-rejected, and pending counts plus a project history. Public profiles omit report titles, descriptions, and proofs of concept.
 - The contract has Hardhat tests for project isolation, amount limits, project-bound signatures, expired signatures, replay prevention, and reentrancy.
 - Deployment is scripted and refuses to deploy to a chain other than Monad Testnet.
 
@@ -131,7 +133,7 @@ Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `frontend/.env.local` to the deployed cont
 npm run dev
 ```
 
-Open `http://localhost:3000`, connect MetaMask, deposit native MON for a project, then submit a report using the same project ID. Project IDs are UTF-8 keccak256-hashed consistently by the frontend and backend.
+Open `http://localhost:3000`, connect MetaMask, deposit native MON for a project, then submit a report using the same project ID. Use **My bounties** in the sidebar to track your deposits, remaining project escrow, and the latest deposit transaction. Project names and descriptions are stored in that browser; on-chain funding history and balances remain available from Monad Testnet. Open `/profile/<wallet-address>` to view or share a public researcher profile; it shows project IDs, severity, and review outcome, never report contents. Project IDs are UTF-8 keccak256-hashed consistently by the frontend and backend.
 
 ## API summary
 
@@ -139,6 +141,8 @@ Open `http://localhost:3000`, connect MetaMask, deposit native MON for a project
 - `GET /api/reports/:reportHash`: returns public triage/review status and, after approval, the researcher-bound signature.
 - `GET /api/review/reports/:reportHash`: returns report details; requires `Authorization: Bearer <REVIEWER_API_KEY>`.
 - `POST /api/review/reports/:reportHash/approve`: issues a time-limited signature for an explicitly selected amount; requires reviewer authorization and signing configuration.
+- `POST /api/review/reports/:reportHash/reject`: records an authorized rejection of a pending report; requires reviewer authorization.
+- `GET /api/profiles/:address`: returns public aggregate review counts and a limited project history for a researcher wallet, without report contents.
 
 ## Remaining limitations
 
